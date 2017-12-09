@@ -144,8 +144,20 @@ def main():
                 print "   ", row
             airline=input('Enter the airline aID that has the milage program you wish to enroll in. ')
             #need a way to check what ailrines have a milage program
-            cur.execute('INSERT INTO mileage_program VALUES (%s,%s,%s)',(airline, email, None))
-	    conn.commit()
+	    #before we can put them in the mileage program we need to check their current bookings and make that their mileage_count. This is necessary because when they cancel a booking, we reduce their mileage_count so the user could theoretically book a flight -> enter mileage program -> cancel booking in order to recieve negative miles which we want to avoid
+	    cur.execute('SELECT date,departureTime FROM bookings WHERE email LIKE %s',(email,))#get foreign keys to schedule table
+	    scheds = cur.fetchall()
+	    if (scheds != []):#possibly no bookings
+	    	newdist = 0
+	    	for sched in scheds:#possibly multiple bookings by 1 person
+	        	cur.execute('SELECT distance FROM schedule WHERE date = %s AND departureTime = %s',(sched[0],sched[1]))#uses foreign keys to schedule to get distance
+	    		distance = cur.fetchone()
+	    		newdist += distance[0]#updates distance for every booking they have
+	    	cur.execute('INSERT INTO mileage_program VALUES (%s,%s,%s)',(airline, email, newdist))
+	    	conn.commit()
+	    else:
+            	cur.execute('INSERT INTO mileage_program VALUES (%s,%s,%s)',(airline, email, 0))
+	    	conn.commit()
             print('enrolled in mileage program')
             #maybe add a way to withdraw from mileage program.
         
@@ -222,6 +234,14 @@ def main():
 	    if (confirm_trans == 1):
 	    	cur.execute('INSERT INTO bookings VALUES (%s,%s,%s,%s,%s,%s,%s)',(email,str(cardrows[desired_card-1][0]),tickrows[desired_ticket-1][0],tickrows[desired_ticket-1][1],tickrows[desired_ticket-1][2],tickrows[desired_ticket-1][3],name))
 	    	conn.commit()
+#from now on we will check if customer is in mileage program and if so add the miles to his bonus
+	    	cur.execute('SELECT email,mileCount FROM mileage_program WHERE email LIKE %s',(email,))
+		mileageinfo = cur.fetchone()
+		if (mileageinfo != None):
+			#updates mileage info if customer has info in there already (is registered)
+			new_miles = mileageinfo[1] + rows[desired_sched-1][5]
+			cur.execute('UPDATE mileage_program SET mileCount = %s WHERE email = %s',(new_miles,email))
+			conn.commit()
 	    else:
 	    	return#cancel transaction
         elif command2==5:
@@ -250,6 +270,15 @@ def main():
 	    	return#user wants to go back
 	    cur.execute('DELETE FROM bookings WHERE email LIKE %s AND cardNum = %s AND class LIKE %s AND date = %s AND departureTime = %s AND flightNum = %s AND nameOfPassenger LIKE %s',(bookrows[book_delete-1][0],bookrows[book_delete-1][1],bookrows[book_delete-1][2],bookrows[book_delete-1][3],bookrows[book_delete-1][4],bookrows[book_delete-1][5],bookrows[book_delete-1][6]))
 	    conn.commit()
+#from now on we will check if the user is in a mileage program and reduce his miles due to cancelled booking
+	    cur.execute('SELECT email,mileCount FROM mileage_program WHERE email LIKE %s',(email,))
+	    mileageinfo = cur.fetchone()
+	    if (mileageinfo != None):
+	    	cur.execute('SELECT distance FROM schedule WHERE Date = %s AND departureTime = %s',(bookrows[book_delete-1][3],bookrows[book_delete-1][4]))
+	    	bookmile = cur.fetchone()
+	    	newmiles = mileageinfo[1] - bookmile[0]
+	    	cur.execute('UPDATE mileage_program SET mileCount = %s WHERE email LIKE %s',(newmiles,email))
+		conn.commit()
 #            print('modify bookings')
 
 
