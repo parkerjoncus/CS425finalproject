@@ -169,6 +169,8 @@ def main():
         #results from flight schedule search is a bit more readable now
 	    inputstr = "Enter the number representing your desired schedule for booking [1-"+str(len(rows))+"]. Enter 0 to go back."
 	    desired_sched=input(inputstr)
+	    if desired_sched == 0:
+	    	return#user wants to go back
 	    cur.execute('SELECT * FROM ticket WHERE date = %s AND departureTime = %s', (rows[desired_sched-1][0], rows[desired_sched-1][1]))
 	    tickrows = cur.fetchall()
 	    if tickrows == []:
@@ -182,6 +184,17 @@ def main():
 	    		tempi +=1
 	    	tempi = 0
 	    	print " "
+	    inputstr = "Enter the number representing the ticket you would like to purchase [1-"+str(len(tickrows))+"]. Enter 0 to go back."
+	    desired_ticket = input(inputstr)
+	    if desired_ticket == 0:
+	    	return#user wants to go back
+	    cur.execute('SELECT cardNum,type,bank FROM credit_cards WHERE email = %s',(email,))
+	    payment_methods = cur.fetchall()
+	    if payment_methods == []:
+	    	print("You have no valid credit cards on file. Please add a valid credit card in PAYMENT INFORMATION to pay.")
+	    	return#no credit cards available -> main menu
+	    print("Available payment methods: ")
+	    #from here on, we need to print out payment methods same as with previous prints then let the user select one, print out all info, and confirm puchase (update bookings)
         elif command2==5:
             from_airport=input('Where are you departing from (IATA)? \n')
             to_airport=input('Where are you flying to (IATA)?\n')
