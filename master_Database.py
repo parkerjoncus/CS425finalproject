@@ -34,12 +34,12 @@ def main():
     print('Welcome to flight app!')
     command1=int(input('Enter 1 to sign in or Enter 2 to sign up. \n'))
     if command1==1:
-        email=raw_input('Enter email: ')
-        cur.execute('SELECT COUNT(email) FROM purchaser WHERE email=(%s)', email )
-        login=cur.fetchall()
-        if (login<1):
-            print('Could not find your account')
-            return
+        email=input('Enter email: ')
+        cur.execute('SELECT COUNT(email) FROM purchaser WHERE email LIKE (%s)', (email,))#yes the comma after email is required or we get an error, this is the world we live in
+        login=cur.fetchone()
+       	if (login[0]<1):
+        	print('Could not find your account')
+        	return
     elif command1==2:
         email=input('Enter email: ')
         name=input('Enter your name: ')
