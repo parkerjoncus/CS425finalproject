@@ -155,13 +155,37 @@ def main():
             to_airport=input('Enter the IATA of the destination airport. \n')
             cur.execute('SELECT * FROM schedule WHERE iata_from=%s AND iata_to=%s',(from_airport,to_airport))
             rows = cur.fetchall()
+	    if rows == []:
+	    	print("Sorry, no matching flights found.")
+	    	return#this should take us back to the main option select but doesn't right now, there are other returns that don't work too
+	    tempi = 0
+	    rownames = ["date: ","departure time: ","start iata: ","destination iata: ","estimated arrival time: ","distance: "]
             for row in rows:
-                print "   ", row
-        
+		for units in row:
+                	print "   ", rownames[tempi], units
+			tempi+=1
+		tempi = 0
+		print " "
+        #results from flight schedule search is a bit more readable now
+	    inputstr = "Enter the number representing your desired schedule for booking [1-"+str(len(rows))+"]. Enter 0 to go back."
+	    desired_sched=input(inputstr)
+	    cur.execute('SELECT * FROM ticket WHERE date = %s AND departureTime = %s', (rows[desired_sched-1][0], rows[desired_sched-1][1]))
+	    tickrows = cur.fetchall()
+	    if tickrows == []:
+	    	print("Sorry, no available tickets")
+	    	return#return to main menu
+	    print("Available Tickets:")
+	    tickrownames = ["class: ","departure date: ","departure time: ","flight number :", "price: ","milage price: "]
+	    for tickrow in tickrows:
+	    	for tickunits in tickrow:
+	    		print "   ", tickrownames[tempi], tickunits
+	    		tempi +=1
+	    	tempi = 0
+	    	print " "
         elif command2==5:
-            from_airport=input('Where are you departing from? \n')
-            to_airport=input('Where are you flying to? \n')
-            date=input('Enter the desired departure date.')
+            from_airport=input('Where are you departing from (IATA)? \n')
+            to_airport=input('Where are you flying to (IATA)?\n')
+            date=input('Enter the desired departure date (MM-DD-YYYY).\n')
 #            print('find tickets given info')
         
         elif command2==6:
