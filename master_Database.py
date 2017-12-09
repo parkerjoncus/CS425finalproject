@@ -36,8 +36,8 @@ def main():
     if command1==1:
         email=input('Enter email: ')
         cur.execute('SELECT COUNT(email) FROM purchaser WHERE email LIKE (%s)', (email,))#yes the comma after email is required or we get an error, this is the world we live in
-        login=cur.fetchone()
-       	if (login[0]<1):
+        login=cur.fetchone()#only ever gonna get 1 row
+       	if (login[0]<1):#selects first element of row (it's the only element)
         	print('Could not find your account')
         	return
     elif command1==2:
@@ -68,15 +68,15 @@ def main():
                 city=input('Enter the billing address city: ')
                 state=input('Enter the billing address state: ')
                 cur.execute('SELECT COUNT(*) FROM address WHERE streetnum=%s AND streetname=%s AND zip=%s', (streetnum, streetname, Zip))
-                add_exist=cur.fetchall()
-                #if (add_exist==0):
-                cur.execute('INSERT INTO address VALUES (%s,%s,%s,%s,%s)',(streetnum,streetname,Zip,city,state))
-		conn.commit()
-                cur.execute('INSERT INTO credit_cards VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)',(cardnum,email,civ,expiration,Type,bank,streetnum,streetname,Zip))
-		conn.commit()
-                cur.execute('INSERT INTO billing_address VALUES (%s,%s,%s,%s)',(cardnum,streetnum,streetname,Zip))
-		conn.commit()
-                print('payment method added \n')
+                add_exist=cur.fetchone()
+                if (add_exist[0]==0):
+                	cur.execute('INSERT INTO address VALUES (%s,%s,%s,%s,%s)',(streetnum,streetname,Zip,city,state))
+			conn.commit()
+                	cur.execute('INSERT INTO credit_cards VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)',(cardnum,email,civ,expiration,Type,bank,streetnum,streetname,Zip))
+			conn.commit()
+                	cur.execute('INSERT INTO billing_address VALUES (%s,%s,%s,%s)',(cardnum,streetnum,streetname,Zip))
+			conn.commit()
+                	print('payment method added \n')
                 
             elif command3==2:
                 streetnum=input('Enter the address street number: ')
