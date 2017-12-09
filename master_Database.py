@@ -37,9 +37,12 @@ def main():
         email=input('Enter email: ')
         cur.execute('SELECT COUNT(email) FROM purchaser WHERE email LIKE (%s)', (email,))#yes the comma after email is required or we get an error, this is the world we live in
         login=cur.fetchone()#only ever gonna get 1 row
-       	if (login[0]<1):#selects first element of row (it's the only element)
+       	if (login[0]<1):#login[0] selects first element of row (it's the only element)
         	print('Could not find your account')
         	return
+	cur.execute('SELECT name FROM purchaser WHERE email LIKE (%s)', (email,))
+	namearray=cur.fetchone()
+	name = namearray[0]# makes name the purchaser's name same as when an account is made, we do this because we'll need name later for flight booking
     elif command1==2:
         email=input('Enter email: ')
         name=input('Enter your name: ')
@@ -169,7 +172,7 @@ def main():
         #results from flight schedule search is a bit more readable now
 	    inputstr = "Enter the number representing your desired schedule for booking [1-"+str(len(rows))+"]. Enter 0 to go back."
 	    desired_sched=input(inputstr)
-	    if desired_sched == 0:
+	    if (desired_sched == 0) or (desired_sched > len(rows)):
 	    	return#user wants to go back
 	    cur.execute('SELECT * FROM ticket WHERE date = %s AND departureTime = %s', (rows[desired_sched-1][0], rows[desired_sched-1][1]))
 	    tickrows = cur.fetchall()
@@ -186,15 +189,41 @@ def main():
 	    	print " "
 	    inputstr = "Enter the number representing the ticket you would like to purchase [1-"+str(len(tickrows))+"]. Enter 0 to go back."
 	    desired_ticket = input(inputstr)
-	    if desired_ticket == 0:
+	    if (desired_ticket == 0) or (desired_ticket > len(tickrows)):
 	    	return#user wants to go back
 	    cur.execute('SELECT cardNum,type,bank FROM credit_cards WHERE email = %s',(email,))
-	    payment_methods = cur.fetchall()
-	    if payment_methods == []:
+	    cardrows = cur.fetchall()
+	    if cardrows == []:
 	    	print("You have no valid credit cards on file. Please add a valid credit card in PAYMENT INFORMATION to pay.")
 	    	return#no credit cards available -> main menu
 	    print("Available payment methods: ")
 	    #from here on, we need to print out payment methods same as with previous prints then let the user select one, print out all info, and confirm puchase (update bookings)
+	    cardrownames = ["card #: ","type: ","bank: "]
+	    for cardrow in cardrows:
+	    	for cardunits in cardrow:
+	    		print "   ", cardrownames[tempi], cardunits
+	    		tempi +=1
+	    	tempi = 0
+	    	print " "
+	    inputstr = "Enter the number representing the payment method you would like to use [1-"+str(len(cardrows))+"]. Enter 0 to go back."
+	    desired_card = input(inputstr)
+	    if (desired_card == 0) or (desired_card > len(cardrows)):
+	    	return;#user wants to go back
+	    print("Transaction Summary:")
+	    print("email: "+email)
+	    print("card number: "+str(cardrows[desired_card-1][0]))
+	    print("class: "+tickrows[desired_ticket-1][0])
+	    print("departure date: "+str(tickrows[desired_ticket-1][1]))
+	    print("departure time: "+str(tickrows[desired_ticket-1][2]))
+	    print("flight number: "+str(tickrows[desired_ticket-1][3]))
+	    print("your name: "+name)
+	    print(" ")
+	    confirm_trans = input("Enter 1 to confirm transaction and book flight. Enter 0 to cancel.")
+	    if (confirm_trans == 1):
+	    	cur.execute('INSERT INTO bookings VALUES (%s,%s,%s,%s,%s,%s,%s)',(email,str(cardrows[desired_card-1][0]),tickrows[desired_ticket-1][0],tickrows[desired_ticket-1][1],tickrows[desired_ticket-1][2],tickrows[desired_ticket-1][3],name))
+	    	conn.commit()
+	    else:
+	    	return#cancel transaction
         elif command2==5:
             from_airport=input('Where are you departing from (IATA)? \n')
             to_airport=input('Where are you flying to (IATA)?\n')
@@ -202,7 +231,25 @@ def main():
 #            print('find tickets given info')
         
         elif command2==6:
-            pass
+            cur.execute('SELECT * FROM bookings WHERE email LIKE (%s)', (email,))
+	    bookrows = cur.fetchall()
+	    if bookrows == []:
+	    	print("You have no booked flights, please use [4] - book flights to book a flight")
+	    	return
+	    tempi = 0
+	    bookrownames = ["email: ","card number: ","class: ","date: ","departure time: ","fight number: ","name: "]
+	    print("Your booked flights:")
+	    for bookrow in bookrows:
+	    	for bookunit in bookrow:
+	    		print "   " ,bookrownames[tempi],bookunit
+	    		tempi += 1
+	    	tempi = 0
+	    inputstr = "Please enter the number corresponding to the booking you wish to cancel [1-"+str(len(bookrows))+"]. Enter 0 to go back"
+	    book_delete = input(inputstr)
+	    if (book_delete == 0) or (book_delete > len(bookrows)):
+	    	return#user wants to go back
+	    cur.execute('DELETE FROM bookings WHERE email LIKE %s AND cardNum = %s AND class LIKE %s AND date = %s AND departureTime = %s AND flightNum = %s AND nameOfPassenger LIKE %s',(bookrows[book_delete-1][0],bookrows[book_delete-1][1],bookrows[book_delete-1][2],bookrows[book_delete-1][3],bookrows[book_delete-1][4],bookrows[book_delete-1][5],bookrows[book_delete-1][6]))
+	    conn.commit()
 #            print('modify bookings')
 
 
