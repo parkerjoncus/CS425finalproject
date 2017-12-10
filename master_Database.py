@@ -102,7 +102,11 @@ def main():
                         try:
                             #only can have 1 livng address, so try to delete any existing first.
                             cur.execute('DELETE FROM living_address WHERE email=%s',(email))
-                        cur.execute('INSERT INTO living_address VALUES (%s,%s,%s,%s)',(email,streetnum,streetname,Zip))
+			    conn.commit()
+                            cur.execute('INSERT INTO living_address VALUES (%s,%s,%s,%s)',(email,streetnum,streetname,Zip))
+			    conn.commit()
+			except:
+				print('Could not add living address, possibly a wrong data type entered')
                     print('added address')
                 except:
                     print('Could not add address. Possibly a wrong data type entered\n')
@@ -125,7 +129,7 @@ def main():
                         print('billing address is updated.\n')
                     except:
                         print('This billing address does not exist, or a wrong data type was entered.\n')
-                conn.commit()
+                    conn.commit()
                 elif command4==2:
                     old_streetnum=input('Enter the old billing address street number: ')
                     old_streetname=input('Enter the old billing address street name: ')
@@ -175,9 +179,9 @@ def main():
             if (scheds != []):#possibly no bookings
                 newdist = 0
                 for sched in scheds:#possibly multiple bookings by 1 person
-                cur.execute('SELECT distance FROM schedule WHERE date = %s AND departureTime = %s',(sched[0],sched[1]))#uses foreign keys to schedule to get distance
-                distance = cur.fetchone()
-                newdist += distance[0]#updates distance for every booking they have
+                	cur.execute('SELECT distance FROM schedule WHERE date = %s AND departureTime = %s',(sched[0],sched[1]))#uses foreign keys to schedule to get distance
+                	distance = cur.fetchone()
+                	newdist += distance[0]#updates distance for every booking they have
                 try:
                     cur.execute('INSERT INTO mileage_program VALUES (%s,%s,%s)',(airline, email, newdist))
                     conn.commit()
@@ -210,7 +214,7 @@ def main():
             for row in rows:
                 for units in row:
                 	print "   ", rownames[tempi], units
-                    tempi+=1
+                        tempi+=1
                 tempi = 0
                 print " "
             #results from flight schedule search is a bit more readable now
