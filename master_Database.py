@@ -204,7 +204,7 @@ def main():
                 print "   ", row
             from_airport=input('Enter the IATA of the starting airport. \n')
             to_airport=input('Enter the IATA of the destination airport. \n')
-            cur.execute('SELECT * FROM schedule WHERE iata_from=%s AND iata_to=%s',(from_airport,to_airport))
+            cur.execute('SELECT * FROM schedule s, ticket t WHERE s.date=t.date AND s.departuretime=t.departuretime AND iata_from=%s AND iata_to=%s ORDER BY departuretime, price',(from_airport,to_airport))
             rows = cur.fetchall()
             if rows == []:
                 print("Sorry, no matching flights found.")
