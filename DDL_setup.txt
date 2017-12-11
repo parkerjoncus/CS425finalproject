@@ -1,0 +1,149 @@
+CREATE USER user1 WITH PASSWORD secret;
+CREATE DATABASE flightdb OWNER user1;
+\c flightdb;
+GRANT ALL ON Airport, Airline, Address, Purchaser, Schedule, Plane, Credit_Cards, Living_Address, Mileage_Program, Ticket, Bookings, billing_address TO user1;
+
+CREATE TABLE Airport (
+        IATA VARCHAR(10),
+        name VARCHAR(30),
+        country VARCHAR(30),
+        state VARCHAR(30),
+        PRIMARY KEY (IATA)
+);
+CREATE TABLE Airline (
+        aID VARCHAR(10),
+        name VARCHAR(30),
+        country VARCHAR(30),
+	has_mileage INT,
+        PRIMARY KEY (aID),
+	CHECK (has_mileage=1 OR has_mileage=0)
+);
+CREATE TABLE Address (
+        streetNum INT,
+        streetName VARCHAR(30),
+        zip INT,
+        city VARCHAR(30),
+        state VARCHAR(30),
+        billing BOOLEAN,
+        PRIMARY KEY (streetNum, streetName, zip)
+);
+CREATE TABLE Purchaser (
+        email VARCHAR(50),
+        IATA VARCHAR(10),
+        name VARCHAR(30),
+        PRIMARY KEY (email),
+        FOREIGN KEY (IATA) REFERENCES Airport
+);
+CREATE TABLE Schedule (
+        date DATE,
+        departureTime TIME,
+        IATA_from VARCHAR(10),
+        IATA_to VARCHAR(10),
+        arrivalTime TIME,
+        distance NUMERIC(8,2),
+        PRIMARY KEY (date,departuretime),
+        FOREIGN KEY (IATA_from) REFERENCES Airport,
+	FOREIGN KEY (IATA_to) REFERENCES Airport
+);
+CREATE TABLE Plane (
+        flightNum INT,
+        aID VARCHAR(10),
+        date DATE,
+        departureTime TIME,
+        maxSeatsEcon INT,
+        maxSeatsFirst INT,
+        takenSeatsEcon INT,
+        takenSeatsFirst INT,
+        model VARCHAR(30),
+        PRIMARY KEY (flightNum),
+        FOREIGN KEY (aid) REFERENCES Airline,
+        FOREIGN KEY (date,departureTime) REFERENCES Schedule
+);
+CREATE TABLE Credit_Cards (
+        cardNum INT,
+        email VARCHAR(50),
+        civ INT,
+        expiration DATE,
+        type VARCHAR(10),
+        bank VARCHAR(30),
+        streetNum INT,
+        streetName VARCHAR(30),
+        zip INT,
+        PRIMARY KEY (cardNum),
+        FOREIGN KEY (email) REFERENCES Purchaser,
+        FOREIGN KEY (streetNum, streetName, zip) REFERENCES Address
+);
+CREATE TABLE Living_Address (
+        email VARCHAR(50),
+        streetNum INT,
+        streetName VARCHAR(30),
+        zip INT,
+        PRIMARY KEY (email,streetNum,streetName,zip),
+        FOREIGN KEY (email) REFERENCES Purchaser,
+        FOREIGN KEY (streetNum,streetName,zip) REFERENCES Address
+);
+CREATE TABLE billing_address (
+	cardNum INT,
+	streetNum INT,
+	streetName VARCHAR(30),
+	zip INT,
+	PRIMARY KEY (cardNum,streetNum,streetName,zip),
+	FOREIGN KEY (cardNum) REFERENCES credit_cards ON DELETE CASCADE,
+	FOREIGN KEY (streetNum, streetName, zip) REFERENCES address ON UPDATE CASCADE
+);
+CREATE TABLE Mileage_Program (
+        aID VARCHAR(10),
+        email VARCHAR(50),
+        mileCount NUMERIC(8,2),
+        PRIMARY KEY (aid,email),
+        FOREIGN KEY (aid) REFERENCES Airline,
+        FOREIGN KEY (email) REFERENCES Purchaser
+);
+CREATE TABLE Ticket (
+        class VARCHAR(20),
+        date DATE,
+        departureTime TIME,
+        flightNum INT,
+        price NUMERIC(8,2),
+        milagePrice numeric(8,2),
+        PRIMARY KEY (class,date,departureTime,flightNum),
+        FOREIGN KEY (date, departureTime) REFERENCES Schedule,
+        FOREIGN KEY (flightNum) REFERENCES Plane
+);
+CREATE TABLE Bookings (
+        email VARCHAR(50),
+        cardNum INT,
+        class VARCHAR(20),
+        date DATE,
+        departureTime TIME,
+        flightNum INT,
+        nameOfPassenger VARCHAR(50),
+        PRIMARY KEY (email,cardNum,class,date,departureTime,flightNum),
+        FOREIGN KEY (email) REFERENCES Purchaser,
+        FOREIGN KEY (cardNum) REFERENCES Credit_Cards,
+        FOREIGN KEY (class,date,departureTime,flightNum) REFERENCES Ticket
+);
+
+INSERT INTO airport VALUES
+	('PDX', 'Portland International', 'USA', 'Oregon'),                                           	('MDW', 'Midway International', 'USA', 'Illinois'),                                           	('ORD', 'OHare International','USA', 'Illinois');
+INSERT INTO airline VALUES
+	('1','Southwest Airlines', 'USA', 1),
+	('2','Alaskian Airlines','USA',0),
+	('3','Spirit','USA',1);
+INSERT INTO schedule VALUES
+	('2017-12-15','12:00:00','PDX','MDW','16:00:00',1300),
+	('2017-12-15','6:00:00','ORD','PDX','9:30:00',1450),
+	('2017-12-15','9:00:00','MDW','PDX','12:45:00',1400),
+	('2017-12-15','7:00:00','PDX','ORD','11:20:00',1350);
+INSERT INTO plane VALUES
+	(111,'1','2017-12-15','12:00:00',100,0,78,0,'SW-383'),
+	(222,'2','2017-12-15','6:00:00',125,25,100,20,'AA-737'),
+	(333,'1','2017-12-15','9:00:00',100,0,90,0,'SW-383'),
+	(444,'3','2017-12-15','7:00:00',90,10,78,5,'SP-100');
+INSERT INTO ticket VALUES
+	('Economy','2017-12-15','12:00:00','111',230.00,12000),
+	('Economy','2017-12-15','6:00:00','222',215.00,NULL),
+	('First','2017-12-15','6:00:00','222',315.00,NULL),
+	('Economy','2017-12-15','9:00:00','333',250.00,15000),
+	('Economy','2017-12-15','7:00:00','444',175.00,10000),
+	('First','2017-12-15','7:00:00','444',300.00,20000);
